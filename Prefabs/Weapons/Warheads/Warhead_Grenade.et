@@ -1,0 +1,7 @@
+GenericEntity : "{9B5FF7EECAD376FA}Prefabs/Weapons/Warheads/Warhead_Base.et" {
+ ID "9D9BE68EA2672F76"
+ components {
+  WarheadComponent "{59775EB21145DC78}" {
+  }
+ }
+}

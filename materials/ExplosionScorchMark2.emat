@@ -1,0 +1,15 @@
+MatPBRDecal {
+ Color 0.033 0.033 0.033 1
+ DiffuseIBL 0.483 0.483 0.483 1
+ SpecularIBL 0.071 0.071 0.071 1
+ Diffuse 0.23 0.23 0.23 1
+ Specular 0 0 0 1
+ BlendMode AlphaBlend
+ RoughnessScale 0.497
+ MetalnessScale 0.702
+ DielectricReflectance 0.045
+ BCRMap "{4490DE18F7AC8983}textures/burnt_sand_light.edds"
+ OpacityMap "{08EE35DE4811FBBE}textures/masks/2.edds"
+ NormalPower 0.444
+ NMOMap "{7499046FC77A52E9}textures/burnt_sand_light_n.edds"
+}
