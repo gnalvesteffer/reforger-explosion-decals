@@ -21,7 +21,6 @@ class WarheadComponent : ScriptComponent
 	private World _world;
 	private vector _origin;
 	private bool _didAffectGrass;
-	private ref set<IEntity> _affectedEntities = new set<IEntity>;
 
 	override void OnPostInit(IEntity owner)
 	{
@@ -38,11 +37,10 @@ class WarheadComponent : ScriptComponent
 	private void SpawnScorchMark(vector direction)
 	{
 		auto surfaceTraceParam = GetSurfaceIntersection(direction);
-		if (!surfaceTraceParam.TraceEnt || DecalEntity.Cast(surfaceTraceParam.TraceEnt))// || _affectedEntities.Contains(surfaceTraceParam.TraceEnt))
+		if (!surfaceTraceParam.TraceEnt || DecalEntity.Cast(surfaceTraceParam.TraceEnt))
 		{
 			return;
 		}
-		_affectedEntities.Insert(surfaceTraceParam.TraceEnt);
 
 		auto resource = Resource.Load(PREFAB_PATHS.GetRandomElement());
 		if (!resource.IsValid())
