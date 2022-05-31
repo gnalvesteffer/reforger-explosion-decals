@@ -54,7 +54,7 @@ class WarheadComponent : ScriptComponent
 		spawnParams.TransformMode = ETransformMode.WORLD;
 		Math3D.AnglesToMatrix(direction.VectorToAngles(), spawnParams.Transform);
 		SCR_Math3D.RotateAround(spawnParams.Transform, _origin, direction, Math.RandomFloat(0, 360), spawnParams.Transform);
-		float scale = Math.RandomFloat(3, 5);
+		float scale = Math.RandomFloat(2, 5);
 		spawnParams.Transform[0] = spawnParams.Transform[0] * scale;
 		spawnParams.Transform[1] = spawnParams.Transform[1] * scale;
 		spawnParams.Transform[2] = spawnParams.Transform[2] * scale;
@@ -85,8 +85,7 @@ class WarheadComponent : ScriptComponent
 	{
 		auto param = new TraceParam();
   		param.Start = _origin;
-  		param.End = _origin + direction * 5;
-		param.LayerMask = TRACE_LAYER_CAMERA;
+  		param.End = _origin + direction;
   		param.Flags = TraceFlags.WORLD | TraceFlags.ENTS;
   		param.Exclude = _owner;
 		_world.TraceMove(param, null);
