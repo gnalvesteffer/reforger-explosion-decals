@@ -1,0 +1,9 @@
+DecalEntity {
+ ID "597B2707AEED5EA1"
+ coords 0 0 0
+ angleX -90
+ scale 6
+ FarPlane 8
+ TerrainOnly 0
+ Mat "{7517F14CACE7D68A}materials/ExplosionScorchMark1.emat"
+}

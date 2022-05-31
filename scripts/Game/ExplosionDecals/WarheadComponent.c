@@ -4,74 +4,94 @@ class WarheadComponentClass : ScriptComponentClass
 
 class WarheadComponent : ScriptComponent
 {
+	private static const int TRACE_ITERATIONS_PER_AXIS = 5;
 	private static const int DECAL_COLOR = Color.FromRGBA(255, 255, 255, 255).PackToInt();
 	private static const ref array<string> MATERIAL_PATHS =
 	{
 		"{7517F14CACE7D68A}materials/ExplosionScorchMark1.emat",
 		"{096D7015B630FD15}materials/ExplosionScorchMark2.emat",
 	};
+	private static const ref array<ResourceName> PREFAB_PATHS =
+	{
+		"{DD8947C58DD25ABA}Prefabs/ScorchDecal1.et",
+		"{B1DD73253116D594}Prefabs/ScorchDecal2.et",
+	};
+
+	private IEntity _owner;
+	private World _world;
+	private vector _origin;
+	private bool _didAffectGrass;
+	private ref set<IEntity> _affectedEntities = new set<IEntity>;
 
 	override void OnPostInit(IEntity owner)
 	{
-		World world = owner.GetWorld();
-		auto position = owner.GetOrigin() + owner.GetAngles();
-		SpawnDecal(owner, world, position, vector.Up);
-		SpawnDecal(owner, world, position, -vector.Up);
-		SpawnDecal(owner, world, position, vector.Right);
-		SpawnDecal(owner, world, position, -vector.Right);
-
+		_owner = owner;
+		_world = owner.GetWorld();
+		_origin = owner.GetOrigin();
+		
+		for (int i = 0; i < 5; ++i)
+		{
+			SpawnScorchMark(Vector(Math.RandomFloat(-1, 1), Math.RandomFloat(-1, 1), Math.RandomFloat(-1, 1)));
+		}
 	}
-	
-	static void SpawnDecal(IEntity owner, World world, vector origin, vector direction)
+
+	private void SpawnScorchMark(vector direction)
 	{
-		vector intersectionPosition;
-		auto surfaceTraceParam = GetSurfaceIntersection(
-			owner,
-            world,
-            origin,
-            direction,
-            2,
-			intersectionPosition
-        );
-        if (surfaceTraceParam.TraceEnt)
-        {
-			auto decal = world.CreateDecal(
-				surfaceTraceParam.TraceEnt,
-				intersectionPosition + surfaceTraceParam.TraceNorm * 0.25,
-				-surfaceTraceParam.TraceNorm,
-				0,
-				4,
-				Math.RandomFloat(0, 360) * Math.DEG2RAD,
-				Math.RandomFloat(4, 8),
-				1,
-				MATERIAL_PATHS.GetRandomElement(),
-				-1,
-				DECAL_COLOR
-			);
-			
-			#ifdef WORKBENCH
-			Shape.CreateSphere(COLOR_GREEN_A, ShapeFlags.TRANSP | ShapeFlags.NOOUTLINE, intersectionPosition + surfaceTraceParam.TraceNorm * 0.25, 0.25);
-			Shape.CreateArrow(intersectionPosition + surfaceTraceParam.TraceNorm, intersectionPosition + surfaceTraceParam.TraceNorm * 2, 0.2, COLOR_RED, ShapeFlags.DEFAULT);
-			#endif
-        }
+		auto surfaceTraceParam = GetSurfaceIntersection(direction);
+		if (!surfaceTraceParam.TraceEnt || DecalEntity.Cast(surfaceTraceParam.TraceEnt))// || _affectedEntities.Contains(surfaceTraceParam.TraceEnt))
+		{
+			return;
+		}
+		_affectedEntities.Insert(surfaceTraceParam.TraceEnt);
+
+		auto resource = Resource.Load(PREFAB_PATHS.GetRandomElement());
+		if (!resource.IsValid())
+		{
+			Debug.Error("Resource failed to load");
+			return;
+		}
+
+		// spawn scorch mark
+		EntitySpawnParams spawnParams = new EntitySpawnParams;
+		spawnParams.TransformMode = ETransformMode.WORLD;
+		Math3D.AnglesToMatrix(direction.VectorToAngles(), spawnParams.Transform);
+		SCR_Math3D.RotateAround(spawnParams.Transform, _origin, direction, Math.RandomFloat(0, 360), spawnParams.Transform);
+		float scale = Math.RandomFloat(3, 5);
+		spawnParams.Transform[0] = spawnParams.Transform[0] * scale;
+		spawnParams.Transform[1] = spawnParams.Transform[1] * scale;
+		spawnParams.Transform[2] = spawnParams.Transform[2] * scale;
+		spawnParams.Transform[3] = _origin;
+		IEntity scorchMark = GetGame().SpawnEntityPrefabLocal(resource, _world, spawnParams);
+
+
+		#ifdef WORKBENCH
+		Shape.CreateSphere(COLOR_YELLOW_A, ShapeFlags.TRANSP | ShapeFlags.NOOUTLINE, scorchMark.GetOrigin(), 0.1);
+		Shape.CreateArrow(scorchMark.GetOrigin(), scorchMark.GetOrigin() + scorchMark.GetAngles().Normalized(), 0.2, COLOR_YELLOW, ShapeFlags.DEFAULT);
+		#endif
+
+		// flatten grass
+		if (!_didAffectGrass)
+		{
+			auto terrain = GenericTerrainEntity.Cast(surfaceTraceParam.TraceEnt);
+			if (terrain)
+			{
+				terrain.FlattenGrassSphere(_origin[0], _origin[2], 10, 0.1, 5, 0.25);
+				terrain.FlattenGrassSphere(_origin[0], _origin[2], 5, 0.05, 0.1, 0.5);
+				terrain.FlattenGrassSphere(_origin[0], _origin[2], 2, 0.01, 0.03, 1);
+				_didAffectGrass = true;
+			}
+		}
 	}
 
-	static TraceParam GetSurfaceIntersection(
-		IEntity owner,
-		World world,
-		vector origin,
-		vector direction,
-		float distance,
-		out vector intersectionPosition
-	)
+	private TraceParam GetSurfaceIntersection(vector direction)
 	{
 		auto param = new TraceParam();
-  		param.Start = origin;
-  		param.End = origin + direction * distance;
+  		param.Start = _origin;
+  		param.End = _origin + direction * 5;
+		param.LayerMask = TRACE_LAYER_CAMERA;
   		param.Flags = TraceFlags.WORLD | TraceFlags.ENTS;
-  		param.Exclude = owner;
-		float intersectionDistance = world.TraceMove(param, NULL) * distance;
-		intersectionPosition = origin + (direction * intersectionDistance);
+  		param.Exclude = _owner;
+		_world.TraceMove(param, null);
 		return param;
 	}
 }
